@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lumen — AI Study Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0F1229;
+    --ink-2:#161a3a;
+    --panel:#1b2047;
+    --panel-2:#222a5c;
+    --paper:#fbf7ee;
+    --paper-2:#f3eee0;
+    --lamp:#f2a65a;
+    --lamp-2:#f7c98b;
+    --focus:#4fd1c5;
+    --coral:#f2666b;
+    --text-light:#edebff;
+    --text-muted:#8c93be;
+    --text-dark:#24263f;
+    --text-dark-muted:#71759a;
+    --radius:20px;
+    --radius-sm:12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse 900px 500px at 20% -10%, rgba(242,166,90,0.14), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgba(79,209,197,0.10), transparent 55%),
+      var(--ink);
+    color:var(--text-light);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--lamp); color:var(--ink); }
+  a{color:inherit;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:28px 0 8px;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.02em;}
+  .brand-mark{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%, var(--lamp-2), var(--lamp) 60%, #c97d34 100%);box-shadow:0 0 18px rgba(242,166,90,.55);}
+  .brand-name{font-size:17px;}
+  .brand-sub{color:var(--text-muted);font-size:12px;font-family:'JetBrains Mono',monospace;letter-spacing:.06em;}
+
+  /* ---------- Hero ---------- */
+  .hero{display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;padding:36px 0 20px;}
+  @media (max-width:920px){ .hero{grid-template-columns:1fr;gap:36px;} }
+
+  .eyebrow{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--focus);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .eyebrow::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--focus);box-shadow:0 0 8px var(--focus);}
+
+  h1.headline{
+    font-family:'Instrument Serif', serif;
+    font-size:clamp(38px,5vw,58px);
+    line-height:1.05;
+    font-weight:400;
+    margin:0 0 18px;
+    color:var(--text-light);
+  }
+  h1.headline em{color:var(--lamp);font-style:italic;}
+  .sub{color:var(--text-muted);font-size:16.5px;line-height:1.6;max-width:480px;margin-bottom:0;}
+
+  /* ---------- Lamp signature SVG ---------- */
+  .lamp-scene{position:relative;display:flex;justify-content:center;align-items:center;}
+  .lamp-scene svg{width:100%;max-width:420px;height:auto;overflow:visible;}
+  .glow-pulse{animation:pulseGlow 3.2s ease-in-out infinite;}
+  @keyframes pulseGlow{
+    0%,100%{ opacity:.55; r:26; }
+    50%{ opacity:.95; r:32; }
+  }
+  .day-dot{transition:opacity .3s;}
+  @media (prefers-reduced-motion: reduce){
+    .glow-pulse{animation:none;}
+  }
+
+  /* ---------- Form Card ---------- */
+  .card{
+    background:linear-gradient(180deg, var(--panel), var(--panel-2));
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:var(--radius);
+    padding:32px;
+    box-shadow:0 30px 60px -25px rgba(0,0,0,0.6);
+  }
+  .field{margin-bottom:20px;}
+  .field label{
+    display:block;font-size:12.5px;font-family:'JetBrains Mono',monospace;
+    letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;
+  }
+  .field input[type=text], .field input[type=date], .field input[type=number]{
+    width:100%;padding:13px 14px;border-radius:11px;border:1px solid rgba(255,255,255,0.09);
+    background:rgba(255,255,255,0.04);color:var(--text-light);font-size:15px;font-family:'Inter',sans-serif;
+    outline:none;transition:border-color .2s, background .2s;
+  }
+  .field input:focus{border-color:var(--lamp);background:rgba(255,255,255,0.07);}
+  .field input::placeholder{color:#5c6291;}
+
+  .subject-row{display:flex;gap:8px;}
+  .subject-row input{flex:1;}
+  .btn-add{
+    background:rgba(79,209,197,0.12);border:1px solid rgba(79,209,197,0.4);color:var(--focus);
+    border-radius:11px;padding:0 18px;font-weight:600;cursor:pointer;font-size:14px;white-space:nowrap;
+    transition:background .2s;
+  }
+  .btn-add:hover{background:rgba(79,209,197,0.22);}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .chip{
+    display:flex;align-items:center;gap:8px;background:rgba(242,166,90,0.12);border:1px solid rgba(242,166,90,0.35);
+    color:var(--lamp-2);padding:7px 8px 7px 14px;border-radius:999px;font-size:13.5px;font-weight:500;
+  }
+  .chip button{
+    background:none;border:none;color:var(--lamp-2);cursor:pointer;font-size:15px;line-height:1;
+    width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    opacity:.7;
+  }
+  .chip button:hover{opacity:1;background:rgba(255,255,255,0.1);}
+
+  .branch-browser{margin-top:16px;padding-top:16px;border-top:1px dashed rgba(255,255,255,0.09);}
+  .branch-browser label{display:block;font-size:12.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
+  #f-branch{
+    width:100%;padding:12px 14px;border-radius:11px;border:1px solid rgba(255,255,255,0.09);
+    background:rgba(255,255,255,0.04);color:var(--text-light);font-size:14.5px;font-family:'Inter',sans-serif;
+    outline:none;cursor:pointer;
+  }
+  #f-branch:focus{border-color:var(--focus);}
+  #f-branch.has-value{color:var(--lamp-2);font-weight:600;border-color:rgba(242,166,90,0.4);}
+  /* Browsers render the native option list with their own default background (often white),
+     so option text needs its own explicit dark color to stay readable there. */
+  #f-branch option{
+    color:var(--text-dark);
+    background:var(--paper);
+    font-weight:500;
+  }
+  .suggestion-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+  .suggestion-chip{
+    background:rgba(79,209,197,0.08);border:1px solid rgba(79,209,197,0.28);color:var(--focus);
+    padding:7px 13px;border-radius:999px;font-size:13px;font-weight:500;cursor:pointer;
+    transition:background .15s, border-color .15s;
+  }
+  .suggestion-chip:hover{background:rgba(79,209,197,0.18);}
+  .suggestion-chip.added{opacity:.4;cursor:default;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:var(--text-muted);}
+  .branch-note{color:var(--text-muted);font-size:12px;line-height:1.5;margin-top:12px;}
+
+  .time-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}  @media (max-width:480px){ .time-grid{grid-template-columns:repeat(2,1fr);} }
+  .time-card{
+    border:1px solid rgba(255,255,255,0.09);background:rgba(255,255,255,0.03);border-radius:13px;
+    padding:14px 8px;text-align:center;cursor:pointer;transition:all .2s;
+  }
+  .time-card .ic{font-size:20px;display:block;margin-bottom:6px;}
+  .time-card .lbl{font-size:12.5px;color:var(--text-muted);font-weight:600;}
+  .time-card.active{border-color:var(--lamp);background:rgba(242,166,90,0.14);}
+  .time-card.active .lbl{color:var(--lamp-2);}
+
+  .hours-display{display:flex;align-items:baseline;gap:6px;margin-top:6px;}
+  .hours-display .num{font-family:'JetBrains Mono',monospace;font-size:26px;color:var(--lamp-2);font-weight:600;}
+  .hours-display .unit{color:var(--text-muted);font-size:13px;}
+  input[type=range]{
+    -webkit-appearance:none;width:100%;height:6px;border-radius:4px;
+    background:linear-gradient(90deg,var(--lamp) 0%, var(--lamp) var(--fill,50%), rgba(255,255,255,0.1) var(--fill,50%));
+    margin-top:10px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--lamp-2);
+    border:3px solid var(--ink);box-shadow:0 0 0 2px var(--lamp);cursor:pointer;
+  }
+
+  .generate-btn{
+    width:100%;margin-top:8px;padding:16px;border:none;border-radius:13px;cursor:pointer;
+    background:linear-gradient(135deg, var(--lamp-2), var(--lamp) 60%, #d98a3d);
+    color:#3a2306;font-weight:700;font-size:15.5px;letter-spacing:.01em;
+    box-shadow:0 12px 28px -10px rgba(242,166,90,0.55);
+    transition:transform .15s, box-shadow .15s;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+  }
+  .generate-btn:hover{transform:translateY(-2px);box-shadow:0 16px 34px -10px rgba(242,166,90,0.7);}
+  .generate-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+  .error-msg{color:var(--coral);font-size:13.5px;margin-top:10px;font-weight:500;}
+
+  /* ---------- Loading ---------- */
+  .loading-wrap{display:none;flex-direction:column;align-items:center;text-align:center;padding:70px 20px;gap:22px;}
+  .loading-wrap.show{display:flex;}
+  .loading-lamp{width:70px;height:70px;position:relative;}
+  .loading-status{font-family:'JetBrains Mono',monospace;font-size:13.5px;color:var(--text-muted);letter-spacing:.03em;min-height:20px;}
+  .spin-ring{
+    width:70px;height:70px;border-radius:50%;
+    border:3px solid rgba(242,166,90,0.15);border-top-color:var(--lamp);
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ---------- Plan Output ---------- */
+  #app-root{padding-bottom:80px;}
+  .plan-section{display:none;margin-top:10px;}
+  .plan-section.show{display:block;}
+
+  .plan-header{
+    background:linear-gradient(160deg, var(--paper), var(--paper-2));
+    color:var(--text-dark);border-radius:var(--radius);padding:38px 40px;
+    display:grid;grid-template-columns:1.3fr 1fr;gap:30px;align-items:center;
+    box-shadow:0 30px 60px -25px rgba(0,0,0,0.55);
+    position:relative;overflow:hidden;
+  }
+  @media (max-width:800px){ .plan-header{grid-template-columns:1fr;} }
+  .plan-header::before{
+    content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;
+    background:radial-gradient(circle, rgba(242,166,90,0.35), transparent 70%);
+  }
+  .plan-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11.5px;text-transform:uppercase;letter-spacing:.12em;color:#a3763a;margin-bottom:10px;}
+  .plan-greeting{font-family:'Instrument Serif',serif;font-size:30px;font-style:italic;line-height:1.25;margin:0 0 12px;}
+  .plan-countdown-msg{color:var(--text-dark-muted);font-size:15px;line-height:1.55;max-width:440px;}
+  .countdown-box{
+    background:var(--ink);border-radius:16px;padding:22px 26px;text-align:center;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .countdown-num{font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:700;color:var(--lamp);line-height:1;}
+  .countdown-lbl{color:var(--text-muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-top:6px;font-family:'JetBrains Mono',monospace;}
+
+  .section-title{
+    font-family:'Instrument Serif',serif;font-size:26px;font-style:italic;color:var(--text-light);
+    margin:56px 0 20px;display:flex;align-items:center;gap:12px;
+  }
+  .section-title .tag{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--focus);background:rgba(79,209,197,0.12);border:1px solid rgba(79,209,197,0.3);
+    padding:4px 10px;border-radius:999px;font-style:normal;
+  }
+
+  /* Priorities */
+  .priority-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;}
+  .priority-card{
+    background:var(--panel);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:20px;
+  }
+  .priority-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+  .priority-subject{font-weight:700;font-size:16px;}
+  .priority-badge{font-size:11px;font-weight:700;letter-spacing:.04em;padding:4px 10px;border-radius:999px;text-transform:uppercase;}
+  .badge-high{background:rgba(242,102,107,0.16);color:var(--coral);}
+  .badge-medium{background:rgba(242,166,90,0.16);color:var(--lamp);}
+  .badge-low{background:rgba(79,209,197,0.16);color:var(--focus);}
+  .priority-note{color:var(--text-muted);font-size:13.5px;line-height:1.5;margin-bottom:12px;}
+  .priority-bar-track{height:6px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;}
+  .priority-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--lamp-2),var(--lamp));}
+  .priority-hours{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--text-muted);margin-top:6px;}
+
+  /* Phases */
+  .phase-track{display:flex;flex-direction:column;gap:0;position:relative;padding-left:28px;}
+  .phase-track::before{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,var(--lamp),var(--focus));opacity:.4;}
+  .phase-item{position:relative;padding:0 0 28px 20px;}
+  .phase-item::before{content:'';position:absolute;left:-28px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--lamp);box-shadow:0 0 0 4px rgba(242,166,90,0.18);}
+  .phase-label{font-weight:700;font-size:15.5px;color:var(--text-light);}
+  .phase-range{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--focus);margin:2px 0 6px;}
+  .phase-focus{color:var(--text-muted);font-size:13.5px;line-height:1.55;max-width:600px;}
+
+  /* Daily plan */
+  .day-card{
+    background:var(--panel);border:1px solid rgba(255,255,255,0.06);border-radius:18px;
+    padding:22px 24px;margin-bottom:16px;
+  }
+  .day-card-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+  .day-name{font-weight:700;font-size:16px;}
+  .day-date{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--text-muted);}
+  .block-row{
+    display:grid;grid-template-columns:130px 1fr auto;gap:14px;align-items:center;
+    padding:11px 0;border-top:1px solid rgba(255,255,255,0.05);
+  }
+  .block-row:first-of-type{border-top:none;}
+  .block-time{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--text-muted);}
+  .block-main .subj{font-weight:600;font-size:14.5px;}
+  .block-main .act{color:var(--text-muted);font-size:13px;margin-top:1px;}
+  .block-dot{width:9px;height:9px;border-radius:50%;justify-self:end;}
+  .dot-study{background:var(--lamp);box-shadow:0 0 8px rgba(242,166,90,0.6);}
+  .dot-break{background:var(--focus);box-shadow:0 0 8px rgba(79,209,197,0.6);}
+  .dot-revision{background:var(--coral);box-shadow:0 0 8px rgba(242,102,107,0.6);}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin:-4px 0 22px;font-size:12.5px;color:var(--text-muted);}
+  .legend span{display:flex;align-items:center;gap:7px;}
+  .legend i{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+  /* Revision */
+  .revision-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
+  .revision-card{
+    background:linear-gradient(160deg, rgba(242,102,107,0.09), var(--panel) 45%);
+    border:1px solid rgba(242,102,107,0.25);border-radius:16px;padding:18px 20px;
+  }
+  .revision-date{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--coral);margin-bottom:8px;letter-spacing:.03em;}
+  .revision-subjects{font-weight:700;font-size:14.5px;margin-bottom:6px;}
+  .revision-focus{color:var(--text-muted);font-size:13px;line-height:1.5;}
+
+  /* Tips */
+  .tip-strip{display:flex;flex-direction:column;gap:12px;}
+  .tip-row{
+    display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid rgba(255,255,255,0.06);
+    border-radius:14px;padding:16px 18px;
+  }
+  .tip-icon{
+    width:30px;height:30px;flex-shrink:0;border-radius:50%;background:radial-gradient(circle at 35% 30%, var(--lamp-2), var(--lamp));
+    display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 10px rgba(242,166,90,0.4);
+  }
+  .tip-text{font-size:14px;line-height:1.55;color:var(--text-light);padding-top:4px;}
+
+  .restart-row{text-align:center;margin-top:50px;}
+  .restart-btn{
+    background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--text-muted);
+    padding:11px 22px;border-radius:999px;cursor:pointer;font-size:13.5px;font-family:'Inter',sans-serif;
+    transition:all .2s;
+  }
+  .restart-btn:hover{border-color:var(--lamp);color:var(--lamp);}
+
+  footer{text-align:center;padding:30px 0 10px;color:#4d5384;font-size:12px;font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div id="app-root">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div>
+          <div class="brand-name">Lumen</div>
+        </div>
+      </div>
+      <div class="brand-sub">AI STUDY PLANNER</div>
+    </div>
+
+    <div class="hero" id="hero-section">
+      <div>
+        <div class="eyebrow">Built for exam season</div>
+        <h1 class="headline">A study plan that<br/> stays lit <em>past midnight.</em></h1>
+        <p class="sub">Tell Lumen your exam date, subjects, and hours — get a day-by-day plan with priorities, revision windows, break reminders, and a little encouragement along the way.</p>
+      </div>
+      <div class="lamp-scene">
+        <svg viewBox="0 0 420 300" fill="none">
+          <ellipse cx="210" cy="270" rx="150" ry="14" fill="rgba(0,0,0,0.35)"/>
+          <path d="M60 40 Q 210 -10 360 40" stroke="rgba(242,166,90,0.35)" stroke-width="2" fill="none"/>
+          <circle class="glow-pulse" cx="210" cy="46" r="28" fill="url(#lampGrad)"/>
+          <circle cx="210" cy="46" r="10" fill="var(--lamp-2)"/>
+          <path d="M210 46 L 110 230 L 310 230 Z" fill="url(#beamGrad)" opacity="0.55"/>
+          <g id="week-dots">
+            <circle class="day-dot" cx="90" cy="230" r="7" fill="rgba(255,255,255,0.15)"/>
+            <circle class="day-dot" cx="140" cy="230" r="7" fill="rgba(255,255,255,0.15)"/>
+            <circle class="day-dot" cx="190" cy="230" r="8" fill="var(--focus)" style="filter:drop-shadow(0 0 6px var(--focus))"/>
+            <circle class="day-dot" cx="240" cy="230" r="7" fill="rgba(255,255,255,0.15)"/>
+            <circle class="day-dot" cx="290" cy="230" r="7" fill="rgba(255,255,255,0.15)"/>
+            <circle class="day-dot" cx="330" cy="230" r="7" fill="rgba(255,255,255,0.15)"/>
+          </g>
+          <defs>
+            <radialGradient id="lampGrad" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%" stop-color="#fce3b8"/>
+              <stop offset="60%" stop-color="var(--lamp)"/>
+              <stop offset="100%" stop-color="rgba(242,166,90,0)"/>
+            </radialGradient>
+            <linearGradient id="beamGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--lamp)" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="var(--lamp)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card" id="form-card">
+      <div class="field">
+        <label for="f-name">Your name</label>
+        <input type="text" id="f-name" placeholder="e.g. Ananya" />
+      </div>
+
+      <div class="field">
+        <label for="f-exam">Exam date</label>
+        <input type="date" id="f-exam" />
+      </div>
+
+      <div class="field">
+        <label>Subjects</label>
+        <div class="subject-row">
+          <input type="text" id="f-subject-input" list="subject-suggest-list" placeholder="e.g. Compiler Design — press Add" />
+          <button class="btn-add" id="btn-add-subject" type="button">Add</button>
+        </div>
+        <datalist id="subject-suggest-list"></datalist>
+        <div class="chips" id="subject-chips"></div>
+
+        <div class="branch-browser">
+          <label for="f-branch">Browse KTU B.Tech subjects by branch</label>
+          <select id="f-branch">
+            <option value="">Select a branch…</option>
+          </select>
+          <div class="suggestion-list" id="suggestion-list"></div>
+          <div class="branch-note">A curated common-subject list — semester names/electives vary by scheme year, so add or edit freely.</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Study hours per day</label>
+        <input type="range" id="f-hours" min="1" max="12" value="4" />
+        <div class="hours-display"><span class="num" id="hours-num">4</span><span class="unit">hours / day</span></div>
+      </div>
+
+      <div class="field">
+        <label>Preferred study time</label>
+        <div class="time-grid" id="time-grid">
+          <div class="time-card" data-time="Morning"><span class="ic">🌅</span><span class="lbl">Morning</span></div>
+          <div class="time-card" data-time="Afternoon"><span class="ic">☀️</span><span class="lbl">Afternoon</span></div>
+          <div class="time-card" data-time="Evening"><span class="ic">🌇</span><span class="lbl">Evening</span></div>
+          <div class="time-card" data-time="Night"><span class="ic">🌙</span><span class="lbl">Night</span></div>
+        </div>
+      </div>
+
+      <button class="generate-btn" id="btn-generate" type="button">✨ Generate my study plan</button>
+      <div class="error-msg" id="error-msg" style="display:none;"></div>
+    </div>
+
+    <div class="loading-wrap" id="loading-wrap">
+      <div class="spin-ring"></div>
+      <div class="loading-status" id="loading-status">Reading your exam date…</div>
+    </div>
+
+    <div class="plan-section" id="plan-section"></div>
+
+    <div class="restart-row" id="restart-row" style="display:none;">
+      <button class="restart-btn" id="btn-restart">Start a new plan</button>
+    </div>
+  </div>
+  <footer>Lumen — plans generated by Claude · study smart, rest well</footer>
+</div>
+
+<script>
+(function(){
+  const subjects = [];
+  let selectedTime = null;
+
+  // A curated set of common KTU B.Tech subjects grouped by branch.
+  // Scheme years and electives vary, so this is a helpful starting list, not an official/exhaustive one.
+  const KTU_SUBJECTS = {
+    "Common (Semester 1 & 2)": ["Engineering Mathematics I","Engineering Mathematics II","Engineering Physics A","Engineering Physics B","Engineering Chemistry","Engineering Graphics","Basics of Civil Engineering","Basics of Mechanical Engineering","Basics of Electrical Engineering","Basics of Electronics Engineering","Programming in C","Professional Communication","Life Skills","Workshop Practice"],
+    "Computer Science & Engineering": ["Data Structures","Discrete Mathematical Structures","Logic System Design","Object Oriented Programming using Java","Design and Engineering","Database Management Systems","Computer Organization and Architecture","Operating Systems","Formal Languages and Automata Theory","Microprocessors and Microcontrollers","Design and Analysis of Algorithms","Computer Networks","Compiler Design","Software Engineering","Artificial Intelligence","Machine Learning","Cryptography and Network Security","Distributed Computing","Cloud Computing","Data Mining and Warehousing"],
+    "Information Technology": ["Data Structures","Object Oriented Programming using Java","Database Management Systems","Operating Systems","Computer Networks","Web Programming","Software Engineering","Information Security","Cloud Computing","Mobile Application Development","Data Mining and Warehousing","Big Data Analytics"],
+    "Electronics & Communication": ["Circuits and Networks","Solid State Devices","Analog Circuits","Digital Systems Design","Signals and Systems","Electromagnetic Theory","Linear Integrated Circuits","Principles of Communication","Microcontrollers and Applications","Digital Signal Processing","VLSI Circuit Design","Microwave and Antennas","Embedded Systems","Digital Communication","Computer Networks","Optical Communication"],
+    "Electrical & Electronics": ["Circuits and Networks","Electrical Machines I","Electrical Machines II","Analog Electronic Circuits","Digital Electronics","Measurements and Instrumentation","Power Systems I","Power Systems II","Control Systems","Power Electronics","Microprocessors and Microcontrollers","Linear Integrated Circuits","Electrical Drives and Control","Switchgear and Protection","High Voltage Engineering","Renewable Energy Systems"],
+    "Mechanical Engineering": ["Engineering Mechanics","Mechanics of Solids","Fluid Mechanics","Thermodynamics","Manufacturing Processes","Machine Drawing","Theory of Machines","Fluid Machinery","Design of Machine Elements","Heat and Mass Transfer","Dynamics of Machinery","Metrology and Instrumentation","Internal Combustion Engines","Finite Element Analysis","CAD/CAM","Refrigeration and Air Conditioning","Industrial Engineering"],
+    "Civil Engineering": ["Engineering Mechanics","Building Materials and Construction","Surveying","Strength of Materials","Fluid Mechanics","Structural Analysis","Geotechnical Engineering","Concrete Technology","Design of Concrete Structures","Design of Steel Structures","Transportation Engineering","Environmental Engineering","Water Resources Engineering","Estimation and Costing","Foundation Engineering"],
+    "Chemical Engineering": ["Chemical Process Calculations","Fluid Flow Operations","Mechanical Operations","Heat Transfer","Mass Transfer I","Mass Transfer II","Chemical Reaction Engineering I","Chemical Reaction Engineering II","Process Instrumentation and Control","Chemical Technology","Plant Design and Economics","Process Equipment Design"],
+    "Biotechnology / Biomedical": ["Cell Biology","Biochemistry","Genetic Engineering","Bioprocess Engineering","Immunology","Bioinformatics","Medical Instrumentation","Biomedical Signal Processing","Human Anatomy and Physiology","Tissue Engineering"]
+  };
+
+  const subjectInput = document.getElementById('f-subject-input');
+  const chipsEl = document.getElementById('subject-chips');
+  const hoursSlider = document.getElementById('f-hours');
+  const hoursNum = document.getElementById('hours-num');
+  const timeGrid = document.getElementById('time-grid');
+  const errorMsg = document.getElementById('error-msg');
+  const generateBtn = document.getElementById('btn-generate');
+  const loadingWrap = document.getElementById('loading-wrap');
+  const loadingStatus = document.getElementById('loading-status');
+  const planSection = document.getElementById('plan-section');
+  const formCard = document.getElementById('form-card');
+  const heroSection = document.getElementById('hero-section');
+  const restartRow = document.getElementById('restart-row');
+
+  function renderChips(){
+    chipsEl.innerHTML = '';
+    subjects.forEach((s, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.innerHTML = '<span></span><button aria-label="Remove">×</button>';
+      chip.querySelector('span').textContent = s;
+      chip.querySelector('button').addEventListener('click', () => {
+        subjects.splice(i,1);
+        renderChips();
+        renderSuggestions();
+      });
+      chipsEl.appendChild(chip);
+    });
+  }
+
+  function addSubject(){
+    const val = subjectInput.value.trim();
+    if(val && !subjects.includes(val)){
+      subjects.push(val);
+      renderChips();
+      renderSuggestions();
+    }
+    subjectInput.value = '';
+    subjectInput.focus();
+  }
+
+  document.getElementById('btn-add-subject').addEventListener('click', addSubject);
+  subjectInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){ e.preventDefault(); addSubject(); }
+  });
+
+  // --- Branch browser: populate dropdown + autocomplete + clickable suggestions ---
+  const branchSelect = document.getElementById('f-branch');
+  const suggestionList = document.getElementById('suggestion-list');
+  const datalistEl = document.getElementById('subject-suggest-list');
+
+  Object.keys(KTU_SUBJECTS).forEach(branch => {
+    const opt = document.createElement('option');
+    opt.value = branch;
+    opt.textContent = branch;
+    branchSelect.appendChild(opt);
+  });
+
+  // Flatten every subject across branches into the autocomplete list (deduped).
+  const allSubjectsSet = new Set();
+  Object.values(KTU_SUBJECTS).forEach(list => list.forEach(s => allSubjectsSet.add(s)));
+  allSubjectsSet.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s;
+    datalistEl.appendChild(opt);
+  });
+
+  function renderSuggestions(){
+    const branch = branchSelect.value;
+    branchSelect.classList.toggle('has-value', !!branch);
+    suggestionList.innerHTML = '';
+    if(!branch) return;
+    (KTU_SUBJECTS[branch] || []).forEach(subj => {
+      const chip = document.createElement('div');
+      const already = subjects.includes(subj);
+      chip.className = 'suggestion-chip' + (already ? ' added' : '');
+      chip.textContent = already ? ('✓ ' + subj) : ('+ ' + subj);
+      if(!already){
+        chip.addEventListener('click', () => {
+          subjects.push(subj);
+          renderChips();
+          renderSuggestions();
+        });
+      }
+      suggestionList.appendChild(chip);
+    });
+  }
+  branchSelect.addEventListener('change', renderSuggestions);
+
+  function updateSliderFill(){
+    const pct = ((hoursSlider.value - hoursSlider.min) / (hoursSlider.max - hoursSlider.min)) * 100;
+    hoursSlider.style.setProperty('--fill', pct + '%');
+    hoursNum.textContent = hoursSlider.value;
+  }
+  hoursSlider.addEventListener('input', updateSliderFill);
+  updateSliderFill();
+
+  timeGrid.querySelectorAll('.time-card').forEach(card => {
+    card.addEventListener('click', () => {
+      timeGrid.querySelectorAll('.time-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      selectedTime = card.dataset.time;
+    });
+  });
+
+  function showError(msg){
+    errorMsg.textContent = msg;
+    errorMsg.style.display = 'block';
+  }
+  function clearError(){
+    errorMsg.style.display = 'none';
+    errorMsg.textContent = '';
+  }
+
+  function daysUntil(dateStr){
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const exam = new Date(dateStr + 'T00:00:00');
+    const diff = Math.round((exam - today) / (1000*60*60*24));
+    return diff;
+  }
+
+  function fmtDate(d){
+    return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  }
+
+  const loadingMessages = [
+    'Reading your exam date…',
+    'Weighing subject priorities…',
+    'Placing your study blocks…',
+    'Scheduling revision days…',
+    'Tucking in break reminders…',
+    'Adding a little encouragement…'
+  ];
+  let loadingInterval = null;
+  function startLoadingMessages(){
+    let i = 0;
+    loadingStatus.textContent = loadingMessages[0];
+    loadingInterval = setInterval(() => {
+      i = (i+1) % loadingMessages.length;
+      loadingStatus.textContent = loadingMessages[i];
+    }, 1600);
+  }
+  function stopLoadingMessages(){
+    clearInterval(loadingInterval);
+  }
+
+  async function generatePlan(){
+    clearError();
+
+    // If the user typed a subject but never clicked Add / pressed Enter, commit it now.
+    const pendingSubject = subjectInput.value.trim();
+    if(pendingSubject && !subjects.includes(pendingSubject)){
+      subjects.push(pendingSubject);
+      renderChips();
+      renderSuggestions();
+      subjectInput.value = '';
+    }
+
+    const name = document.getElementById('f-name').value.trim();
+    const examDateStr = document.getElementById('f-exam').value;
+    const hours = hoursSlider.value;
+
+    if(!name){ showError('Please enter your name.'); return; }
+    if(!examDateStr){ showError('Please choose your exam date.'); return; }
+    if(subjects.length === 0){ showError('Add at least one subject.'); return; }
+    if(!selectedTime){ showError('Pick a preferred study time.'); return; }
+
+    const totalDays = daysUntil(examDateStr);
+    if(totalDays < 0){ showError('Exam date should be in the future.'); return; }
+
+    const examDate = new Date(examDateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    generateBtn.disabled = true;
+    formCard.style.display = 'none';
+    heroSection.style.display = 'none';
+    loadingWrap.classList.add('show');
+    startLoadingMessages();
+
+    try{
+      const response = await fetch('/api/generate-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          examDate: examDateStr,
+          subjects,
+          hours,
+          preferredTime: selectedTime
+        })
+      });
+
+      const data = await response.json();
+
+      if(!response.ok){
+        throw new Error(data && data.error ? data.error : ('Request failed (status ' + response.status + ')'));
+      }
+
+      const cleaned = (data.text || '').replace(/```json/gi, '').replace(/```/g, '').trim();
+      const jsonStart = cleaned.indexOf('{');
+      const jsonSlice = jsonStart >= 0 ? cleaned.slice(jsonStart) : cleaned;
+      const plan = tryParseJson(jsonSlice);
+
+      renderPlan(plan, { name, totalDays: data.totalDays !== undefined ? data.totalDays : totalDays });
+    }catch(err){
+      console.error(err);
+      loadingWrap.classList.remove('show');
+      formCard.style.display = 'block';
+      heroSection.style.display = 'grid';
+      showError("Couldn't generate your plan: " + (err && err.message ? err.message : 'unknown error') + '. Please try again.');
+    }finally{
+      stopLoadingMessages();
+      generateBtn.disabled = false;
+    }
+  }
+
+  function balanceBrackets(s){
+    // Walk the string tracking string/escape state so we don't count braces inside string literals.
+    const stack = [];
+    let inString = false, escaped = false;
+    for(let i=0;i<s.length;i++){
+      const ch = s[i];
+      if(inString){
+        if(escaped){ escaped = false; }
+        else if(ch === '\\'){ escaped = true; }
+        else if(ch === '"'){ inString = false; }
+        continue;
+      }
+      if(ch === '"'){ inString = true; continue; }
+      if(ch === '{' || ch === '['){ stack.push(ch); }
+      else if(ch === '}'){ if(stack[stack.length-1] === '{') stack.pop(); }
+      else if(ch === ']'){ if(stack[stack.length-1] === '[') stack.pop(); }
+    }
+    let suffix = '';
+    if(inString) suffix += '"';
+    for(let i=stack.length-1;i>=0;i--){ suffix += (stack[i] === '{' ? '}' : ']'); }
+    return s + suffix;
+  }
+
+  function stripTrailingComma(s){
+    return s.replace(/,\s*$/, '');
+  }
+
+  function tryParseJson(raw){
+    // 1) parse as-is
+    try{ return JSON.parse(raw); }catch(_e){ /* continue */ }
+
+    // 2) response may have been cut off mid-way through the JSON (token limit hit).
+    // Walk backwards from the end to the last "safe" cut point (a closing } or ] or a quote),
+    // drop everything after it, strip a dangling trailing comma, then close any open brackets.
+    for(let i = raw.length; i > 0; i--){
+      const ch = raw[i-1];
+      if(ch === '}' || ch === ']' || ch === '"'){
+        let candidate = stripTrailingComma(raw.slice(0, i));
+        candidate = balanceBrackets(candidate);
+        try{ return JSON.parse(candidate); }catch(_e){ continue; }
+      }
+    }
+    throw new Error('Response was incomplete and could not be repaired');
+  }
+
+  function esc(s){
+    if(s === undefined || s === null) return '';
+    const div = document.createElement('div');
+    div.textContent = String(s);
+    return div.innerHTML;
+  }
+
+  function priorityBadgeClass(p){
+    const v = (p||'').toLowerCase();
+    if(v === 'high') return 'badge-high';
+    if(v === 'low') return 'badge-low';
+    return 'badge-medium';
+  }
+  function priorityBarWidth(p){
+    const v = (p||'').toLowerCase();
+    if(v === 'high') return '90%';
+    if(v === 'low') return '35%';
+    return '62%';
+  }
+  function dotClass(type){
+    const v = (type||'').toLowerCase();
+    if(v === 'break') return 'dot-break';
+    if(v === 'revision') return 'dot-revision';
+    return 'dot-study';
+  }
+
+  function renderPlan(plan, ctx){
+    loadingWrap.classList.remove('show');
+
+    const priorities = plan.subjectPriorities || [];
+    const phases = plan.phases || [];
+    const dailyPlan = plan.dailyPlan || [];
+    const revisionSchedule = plan.revisionSchedule || [];
+    const tips = plan.tips || [];
+
+    let html = '';
+
+    html += `
+      <div class="plan-header">
+        <div>
+          <div class="plan-eyebrow">Your plan is ready</div>
+          <h2 class="plan-greeting">${esc(plan.greeting || ('Good luck, ' + ctx.name + '.'))}</h2>
+          <p class="plan-countdown-msg">${esc(plan.countdownMessage || '')}</p>
+        </div>
+        <div class="countdown-box">
+          <div class="countdown-num">${ctx.totalDays}</div>
+          <div class="countdown-lbl">days to go</div>
+        </div>
+      </div>
+    `;
+
+    if(priorities.length){
+      html += `<h3 class="section-title">Subject priorities <span class="tag">where to focus</span></h3>`;
+      html += `<div class="priority-grid">`;
+      priorities.forEach(p => {
+        html += `
+          <div class="priority-card">
+            <div class="priority-top">
+              <div class="priority-subject">${esc(p.subject)}</div>
+              <div class="priority-badge ${priorityBadgeClass(p.priority)}">${esc(p.priority || 'Medium')}</div>
+            </div>
+            <div class="priority-note">${esc(p.note || '')}</div>
+            <div class="priority-bar-track"><div class="priority-bar-fill" style="width:${priorityBarWidth(p.priority)}"></div></div>
+            ${p.hoursPerWeek ? `<div class="priority-hours">${esc(p.hoursPerWeek)} hrs / week</div>` : ''}
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+
+    if(phases.length){
+      html += `<h3 class="section-title">Roadmap <span class="tag">the full stretch</span></h3>`;
+      html += `<div class="phase-track">`;
+      phases.forEach(ph => {
+        html += `
+          <div class="phase-item">
+            <div class="phase-label">${esc(ph.label)}</div>
+            <div class="phase-range">${esc(ph.dateRange)}</div>
+            <div class="phase-focus">${esc(ph.focus)}</div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+
+    if(dailyPlan.length){
+      html += `<h3 class="section-title">Day-by-day <span class="tag">${esc(ctx.name)}'s schedule</span></h3>`;
+      html += `<div class="legend">
+        <span><i style="background:var(--lamp)"></i> Study</span>
+        <span><i style="background:var(--focus)"></i> Break</span>
+        <span><i style="background:var(--coral)"></i> Revision</span>
+      </div>`;
+      dailyPlan.forEach(day => {
+        html += `<div class="day-card">
+          <div class="day-card-head">
+            <div class="day-name">${esc(day.day)}</div>
+            <div class="day-date">${esc(day.date)}</div>
+          </div>`;
+        (day.blocks || []).forEach(b => {
+          html += `
+            <div class="block-row">
+              <div class="block-time">${esc(b.time)}</div>
+              <div class="block-main">
+                <div class="subj">${esc(b.subject)}</div>
+                <div class="act">${esc(b.activity)}</div>
+              </div>
+              <div class="block-dot ${dotClass(b.type)}"></div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+      });
+    }
+
+    if(revisionSchedule.length){
+      html += `<h3 class="section-title">Revision windows <span class="tag">before the exam</span></h3>`;
+      html += `<div class="revision-grid">`;
+      revisionSchedule.forEach(r => {
+        html += `
+          <div class="revision-card">
+            <div class="revision-date">${esc(r.date)}</div>
+            <div class="revision-subjects">${esc(r.subjects)}</div>
+            <div class="revision-focus">${esc(r.focus)}</div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+
+    if(tips.length){
+      html += `<h3 class="section-title">A few reminders <span class="tag">for the hard days</span></h3>`;
+      html += `<div class="tip-strip">`;
+      tips.forEach(t => {
+        html += `
+          <div class="tip-row">
+            <div class="tip-icon">💡</div>
+            <div class="tip-text">${esc(t)}</div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+
+    planSection.innerHTML = html;
+    planSection.classList.add('show');
+    restartRow.style.display = 'block';
+    planSection.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  generateBtn.addEventListener('click', generatePlan);
+
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    planSection.classList.remove('show');
+    planSection.innerHTML = '';
+    restartRow.style.display = 'none';
+    formCard.style.display = 'block';
+    heroSection.style.display = 'grid';
+    branchSelect.value = '';
+    branchSelect.classList.remove('has-value');
+    suggestionList.innerHTML = '';
+    window.scrollTo({ top: 0, behavior:'smooth' });
+  });
+
+  // set min date to today
+  const examInput = document.getElementById('f-exam');
+  const todayIso = new Date().toISOString().split('T')[0];
+  examInput.setAttribute('min', todayIso);
+})();
+</script>
+</body>
+</html>

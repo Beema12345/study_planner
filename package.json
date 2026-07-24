@@ -1,0 +1,9 @@
+{
+  "name": "lumen-study-planner-vercel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI Study Planner — static frontend + Vercel serverless function calling the Gemini API.",
+  "engines": {
+    "node": "18.x"
+  }
+}
