@@ -80,7 +80,7 @@ Rules:
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
         generationConfig: {
-          maxOutputTokens: 2000,
+          maxOutputTokens: 4096,
           responseMimeType: 'application/json',
         },
       }),
